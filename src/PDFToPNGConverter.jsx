@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Download, Upload, FileText } from 'lucide-react';
@@ -15,6 +15,16 @@ function PDFToPNGConverter() {
   const [isTransparent, setIsTransparent] = useState(false);
   const [bgColor, setBgColor] = useState('#ffffff'); // Hex for RGB
   const [bgAlpha, setBgAlpha] = useState(1); // 0 to 1 for Alpha
+  const [exportScale, setExportScale] = useState(1.0);
+  const [pageDimensions, setPageDimensions] = useState({}); // Stores { index: { w, h } }
+  
+  const handlePageLoad = (page, index) => {
+    // Capture base dimensions at scale 1.0
+    setPageDimensions(prev => ({
+      ...prev,
+      [index]: { width: page.originalWidth, height: page.originalHeight }
+    }));
+  };
 
   // Convert 0-1 alpha to 00-FF hex
   const alphaHex = Math.round(bgAlpha * 255).toString(16).padStart(2, '0');
@@ -34,7 +44,7 @@ function PDFToPNGConverter() {
   });
 
   // Save specific page as PNG
-  const saveAsPNG = async (index) => {
+  const saveAsPNG = async (index, scale) => {
     if (!file) return;
   
     try {
@@ -46,7 +56,6 @@ function PDFToPNGConverter() {
       const page = await pdf.getPage(index + 1);
       
       // Set a high scale (e.g., 3.0 or 4.0 for high res)
-      const scale = 5.0; 
       const viewport = page.getViewport({ scale });
   
       // Create an off-screen canvas
@@ -126,6 +135,20 @@ function PDFToPNGConverter() {
           </div>
         </div>
 
+        {/* Global Scale Control */}
+        <div className="flex items-center gap-4 mb-6 p-4 bg-white rounded-lg shadow">
+          <label className="font-semibold text-gray-700">Export Scale:</label>
+          <input 
+            type="number" 
+            min="0.1" 
+            step="0.1" 
+            value={exportScale} 
+            onChange={(e) => setExportScale(parseFloat(e.target.value) || 1.0)}
+            className="border rounded px-2 py-1 w-20"
+          />
+          <span className="text-sm text-gray-500">(1.0 = 100% resolution)</span>
+        </div>
+
         {/* PDF Preview & Actions */}
         {file && (
           <div className="bg-white rounded-xl shadow-lg p-6">
@@ -143,32 +166,50 @@ function PDFToPNGConverter() {
                 onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                 className="flex flex-wrap gap-8 justify-center items-start"
               >
-                {Array.from(new Array(numPages), (el, index) => (
-                  <div key={`page_${index + 1}`} className="relative group border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                    <div ref={el => pageRefs.current[index] = el}>
-                      <Page 
-                        pageNumber={index + 1} 
-                        renderTextLayer={false} 
-                        renderAnnotationLayer={false}
-                        width={300}
-                        {...(useBg && {
-                          canvasBackground: isTransparent ? 'rgba(255, 255, 255, 0.8)' : hexColorWithAlpha
-                        })}
-                      />
+                {Array.from(new Array(numPages), (el, index) => {
+                  const base = pageDimensions[index];
+                  return (
+                    <div key={`page_${index + 1}`} className="relative group border border-gray-200 rounded-lg overflow-hidden   shadow-sm">
+                      {/* Dimension Info Lines */}
+                      <div className="mb-3 space-y-1 border-l-2 border-blue-500 pl-3 tracking-wider">
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>Base Resolution:</span>
+                          <span>{base ? `${Math.round(base.width)} × ${Math.round(base.height)} px` : 'Loading...'}</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-700">
+                          <span>Export Resolution:</span>
+                          <span className="text-blue-600">
+                            {base ? `${Math.round(base.width * exportScale)} × ${Math.round(base.height * exportScale)} px` : '...'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div ref={el => pageRefs.current[index] = el}>
+                        <Page 
+                          pageNumber={index + 1}
+                          onLoadSuccess={(page) => handlePageLoad(page, index)}
+                          renderTextLayer={false} 
+                          renderAnnotationLayer={false}
+                          width={300}
+                          {...(useBg && {
+                            canvasBackground: isTransparent ? 'rgba(255, 255, 255, 0.8)' : hexColorWithAlpha
+                          })}
+                        />
+                      </div>
+                      
+                      {/* Hover Overlay Button */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex   items-center justify-center">
+                        <button
+                          onClick={() => saveAsPNG(index, exportScale)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full flex items-center gap-2   shadow-lg"
+                        >
+                          <Download size={18} />
+                          Save Page {index + 1} as PNG
+                        </button>
+                      </div>
                     </div>
-                    
-                    {/* Hover Overlay Button */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <button
-                        onClick={() => saveAsPNG(index)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg"
-                      >
-                        <Download size={18} />
-                        Save Page {index + 1} as PNG
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </Document>
             </div>
           </div>
