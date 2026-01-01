@@ -27,19 +27,47 @@ function PDFToPNGConverter() {
 
   // Save specific page as PNG
   const saveAsPNG = async (index) => {
-    const canvas = pageRefs.current[index]?.querySelector('canvas');
-    if (!canvas) return;
-
-    const imageUrl = canvas.toDataURL("image/png"); // Convert canvas to data URL
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `page-${index + 1}.png`;
-    link.click();
+    if (!file) return;
+  
+    try {
+      // 1. Load the document specifically for rendering
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+      
+      // 2. Get the specific page
+      const page = await pdf.getPage(index + 1);
+      
+      // 3. Set a high scale (e.g., 3.0 or 4.0 for high res)
+      const scale = 5.0; 
+      const viewport = page.getViewport({ scale });
+  
+      // 4. Create an off-screen canvas
+      const canvas = new OffscreenCanvas(viewport.width, viewport.height);
+      const context = canvas.getContext('2d');
+  
+      // 5. Render the page to the off-screen canvas
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+      };
+      
+      await page.render(renderContext).promise;
+  
+      // 6. Download the result
+      const blob = await canvas.convertToBlob({ type: 'image/png' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `page-${index + 1}.png`;
+      link.click();
+      URL.revokeObjectURL(link.href); // Clean up memory
+    } catch (error) {
+      console.error("Error generating PNG:", error);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 font-sans">
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">PDF to PNG Converter</h1>
 
         {/* Drop Box */}
@@ -70,7 +98,7 @@ function PDFToPNGConverter() {
               <Document
                 file={file}
                 onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                className="flex flex-col gap-8"
+                className="flex flex-wrap gap-8 justify-center items-start"
               >
                 {Array.from(new Array(numPages), (el, index) => (
                   <div key={`page_${index + 1}`} className="relative group border border-gray-200 rounded-lg overflow-hidden shadow-sm">
@@ -79,7 +107,7 @@ function PDFToPNGConverter() {
                         pageNumber={index + 1} 
                         renderTextLayer={false} 
                         renderAnnotationLayer={false}
-                        width={600}
+                        width={300}
                       />
                     </div>
                     
