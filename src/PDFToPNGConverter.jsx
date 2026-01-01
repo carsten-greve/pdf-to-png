@@ -11,6 +11,14 @@ function PDFToPNGConverter() {
   const [file, setFile] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const pageRefs = useRef([]);
+  const [useBg, setUseBg] = useState(false);
+  const [isTransparent, setIsTransparent] = useState(false);
+  const [bgColor, setBgColor] = useState('#ffffff'); // Hex for RGB
+  const [bgAlpha, setBgAlpha] = useState(1); // 0 to 1 for Alpha
+
+  // Convert 0-1 alpha to 00-FF hex
+  const alphaHex = Math.round(bgAlpha * 255).toString(16).padStart(2, '0');
+  const hexColorWithAlpha = `${bgColor}${alphaHex}`;
 
   // Handle file selection/drop
   const onDrop = (acceptedFiles) => {
@@ -30,30 +38,31 @@ function PDFToPNGConverter() {
     if (!file) return;
   
     try {
-      // 1. Load the document specifically for rendering
+      // Load the document specifically for rendering
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjs.getDocument(arrayBuffer).promise;
       
-      // 2. Get the specific page
+      // Get the specific page
       const page = await pdf.getPage(index + 1);
       
-      // 3. Set a high scale (e.g., 3.0 or 4.0 for high res)
+      // Set a high scale (e.g., 3.0 or 4.0 for high res)
       const scale = 5.0; 
       const viewport = page.getViewport({ scale });
   
-      // 4. Create an off-screen canvas
+      // Create an off-screen canvas
       const canvas = new OffscreenCanvas(viewport.width, viewport.height);
       const context = canvas.getContext('2d');
-  
-      // 5. Render the page to the off-screen canvas
+
+      // Render the page to the off-screen canvas
       const renderContext = {
         canvasContext: context,
         viewport: viewport,
+        ...(useBg && { background: isTransparent ? 'rgba(0,0,0,0)' : hexColorWithAlpha }),
       };
       
       await page.render(renderContext).promise;
   
-      // 6. Download the result
+      // Download the result
       const blob = await canvas.convertToBlob({ type: 'image/png' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -83,6 +92,40 @@ function PDFToPNGConverter() {
           </p>
         </div>
 
+        {/* PDF default background color */}
+        <div className="flex flex-col gap-4 p-4 bg-white rounded-lg shadow mb-6">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={useBg} onChange={(e) => setUseBg(e.target.checked)} />
+            Change PDF default background color
+          </label>
+        
+          <label className={`flex items-center gap-2 ${!useBg && 'opacity-50'}`}>
+            <input 
+              type="checkbox" 
+              disabled={!useBg} 
+              checked={isTransparent} 
+              onChange={(e) => setIsTransparent(e.target.checked)} 
+            />
+            Make transparent
+          </label>
+        
+          <div className={`flex items-center gap-4 ${(!useBg || isTransparent) && 'opacity-50'}`}>
+            <span>Background Color:</span>
+            <input 
+              type="color" 
+              disabled={!useBg || isTransparent} 
+              value={bgColor} 
+              onChange={(e) => setBgColor(e.target.value)} 
+            />
+            <input 
+              type="range" min="0" max="1" step="0.1" 
+              disabled={!useBg || isTransparent} 
+              value={bgAlpha} 
+              onChange={(e) => setBgAlpha(parseFloat(e.target.value))} 
+            />
+          </div>
+        </div>
+
         {/* PDF Preview & Actions */}
         {file && (
           <div className="bg-white rounded-xl shadow-lg p-6">
@@ -108,6 +151,9 @@ function PDFToPNGConverter() {
                         renderTextLayer={false} 
                         renderAnnotationLayer={false}
                         width={300}
+                        {...(useBg && {
+                          canvasBackground: isTransparent ? 'rgba(255, 255, 255, 0.8)' : hexColorWithAlpha
+                        })}
                       />
                     </div>
                     
