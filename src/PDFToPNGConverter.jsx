@@ -125,12 +125,13 @@ function PDFToPNGConverter() {
               disabled={!useBg || isTransparent} 
               value={bgColor} 
               onChange={(e) => setBgColor(e.target.value)} 
+              className={`w-10 h-10 cursor-pointer rounded-md border border-gray-300 bg-transparent p-0 appearance-none ${(!useBg || isTransparent) ? 'opacity-50 grayscale' : 'opacity-100'} [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-md`}
             />
             <input 
-              type="range" min="0" max="1" step="0.1" 
-              disabled={!useBg || isTransparent} 
-              value={bgAlpha} 
-              onChange={(e) => setBgAlpha(parseFloat(e.target.value))} 
+              type="range" min="0" max="1" step="0.1"
+              disabled={!useBg || isTransparent}
+              value={bgAlpha}
+              onChange={(e) => setBgAlpha(parseFloat(e.target.value))}
             />
           </div>
         </div>
@@ -166,29 +167,31 @@ function PDFToPNGConverter() {
                 onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                 className="flex flex-wrap gap-8 justify-center items-start"
               >
-                {Array.from(new Array(numPages), (el, index) => {
+                {Array.from(new Array(numPages), (_, index) => {
                   const base = pageDimensions[index];
+
                   return (
-                    <div key={`page_${index + 1}`} className="relative group border border-gray-200 rounded-lg overflow-hidden   shadow-sm">
-                      {/* Dimension Info Lines */}
-                      <div className="mb-3 space-y-1 border-l-2 border-blue-500 pl-3 tracking-wider">
-                        <div className="flex justify-between text-xs text-gray-400">
+                    <div key={`page_${index + 1}`} className="flex flex-col border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden mb-8">
+                      {/* Header with Dimensions */}
+                      <div className="p-3 border-b bg-gray-50 space-y-1">
+                        <div className="flex justify-between text-xs tracking-wider text-gray-400">
                           <span>Base Resolution:</span>
-                          <span>{base ? `${Math.round(base.width)} × ${Math.round(base.height)} px` : 'Loading...'}</span>
+                          <span>{base ? `${Math.floor(base.width)}x${Math.floor(base.height)}px` : '...'}</span>
                         </div>
-                        <div className="flex justify-between text-xs text-gray-700">
+                        <div className="flex justify-between text-xs tracking-wider text-gray-700">
                           <span>Export Resolution:</span>
                           <span className="text-blue-600">
-                            {base ? `${Math.round(base.width * exportScale)} × ${Math.round(base.height * exportScale)} px` : '...'}
+                            {base ? `${Math.floor(base.width * exportScale)}x${Math.floor(base.height * exportScale)}px` : '...'}
                           </span>
                         </div>
                       </div>
-
-                      <div ref={el => pageRefs.current[index] = el}>
+                
+                      {/* PDF Preview */}
+                      <div ref={el => pageRefs.current[index] = el} className="p-2 self-center">
                         <Page 
-                          pageNumber={index + 1}
+                          pageNumber={index + 1} 
                           onLoadSuccess={(page) => handlePageLoad(page, index)}
-                          renderTextLayer={false} 
+                          renderTextLayer={false}
                           renderAnnotationLayer={false}
                           width={300}
                           {...(useBg && {
@@ -196,17 +199,15 @@ function PDFToPNGConverter() {
                           })}
                         />
                       </div>
-                      
-                      {/* Hover Overlay Button */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex   items-center justify-center">
-                        <button
-                          onClick={() => saveAsPNG(index, exportScale)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full flex items-center gap-2   shadow-lg"
-                        >
-                          <Download size={18} />
-                          Save Page {index + 1} as PNG
-                        </button>
-                      </div>
+                
+                      {/* Save Button */}
+                      <button
+                        onClick={() => saveAsPNG(index, exportScale)}
+                        className="m-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors font-medium"
+                      >
+                        <Download size={18} />
+                        Save Page {index + 1} as PNG
+                      </button>
                     </div>
                   );
                 })}
