@@ -2,11 +2,15 @@
 
 Allow PDF files to be converted in local browser to PNG image files.
 
-The default PDF background color can be changed.
+The PDF default background color can be changed.
 
 The PNG can be saved at any scaled resolution, up to the allowed canvas size of the local device/browser.
 
+Try it here: [https://carsten-greve.github.io/pdf-to-png/](https://carsten-greve.github.io/pdf-to-png/)
+
 ## Building it locally
+
+Uses [Vite](https://vite.dev/), [React](https://react.dev/) and [Tailwind CSS](https://tailwindcss.com/)
 
 `npm install` to install dependencies.
 
@@ -18,8 +22,8 @@ The PNG can be saved at any scaled resolution, up to the allowed canvas size of 
 
 Use any PDF file or these:
 
-- helloworld.pdf
-- PageSizes_output.pdf
+- [helloworld.pdf](https://github.com/carsten-greve/pdf-to-png/raw/refs/heads/main/helloworld.pdf)
+- [PageSizes_output.pdf](https://github.com/carsten-greve/pdf-to-png/raw/refs/heads/main/PageSizes_output.pdf)
 
 ## Notes
 
