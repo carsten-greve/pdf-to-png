@@ -1,16 +1,26 @@
-# React + Vite
+# PDF to PNG Converter
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Allow PDF files to be converted in local browser to PNG image files.
 
-Currently, two official plugins are available:
+The default PDF background color can be changed.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The PNG can be saved at any scaled resolution, up to the allowed canvas size of the local device/browser.
 
-## React Compiler
+## Building it locally
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+`npm install` to install dependencies.
 
-## Expanding the ESLint configuration
+`npm run build` to build.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+`npm run dev` sets up a local development server.
+
+## Testing
+
+Use any PDF file or these:
+
+- helloworld.pdf
+- PageSizes_output.pdf
+
+## Notes
+
+`react-pdf` and `pdfjs-dist` must use matching `pdfjs` versions, so they are fixed in `package.json`.
